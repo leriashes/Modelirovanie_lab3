@@ -48,66 +48,74 @@ def PrintPerem(bazis, y):
         print("  y", end='')
         PrintNumb(y[i])
         print("  |", end='')
-    
-    print()
 
-    for i in range(46 + round((7 * (len(bazis) + len(y) + 2) - 10) / 2) * 2):
-        print("-", end='')
-    print()
 
 def PrintRow(letter, numb, svc, perem, ocen):
+    print()
+    for i in range(46 + round((7 * (len(bazis) + len(y) + 2) - 10) / 2) * 2):
+        print("-", end='')
+
+    print()
+
     print("  ", letter, sep='', end='')
     PrintNumb(numb)
-    print("   |{: ^10}|".format(svc), end='')
+    print("   |{: ^10.3}|".format(svc), end='')
 
     for p in perem:
-        print("{: ^6}|".format(p), end='')
-
-    infin = False
+        print("{: ^6.3}|".format(p), end='')
 
     if (ocen[0] == True):
         ocenka = "∞"
     else:
         ocenka = ocen[1]
 
-    print("{: ^16}".format(ocenka))
+    print("{: ^16.3}".format(ocenka), end='')
 
-    for i in range(46 + round((7 * (len(bazis) + len(y) + 2) - 10) / 2) * 2):
-        print("-", end='')
-    print()
 
 def PrintFRow(fsv, fcoef):
-    print("  F    |{: ^10}|".format(fsv), end='')
+    print()
+    for i in range(46 + round((7 * (len(bazis) + len(y) + 2) - 10) / 2) * 2):
+        print("-", end='')
+    
+    print("\n  F    |{: ^10}|".format(fsv), end='')
 
     for coef in fcoef:
         print("{: ^6}|".format(coef), end='')
-    
+
     print()
 
     for i in range(46 + round((7 * (len(bazis) + len(y) + 2) - 10) / 2) * 2):
         print("-", end='')
-    print()
+    
 
-def PrintTableM(bazis, svc, perem, y, fcoef, fsv, mcoef, ocen):
+def PrintTableM(bazis, svc, perem, y, yrow, fcoef, fsv, mcoef, msv, ocen, row, col):
     PrintHeader(len(bazis) + len(y));
     PrintPerem(bazis, y)
     
-    for i in range(len(y)):
-        PrintRow('y', y[i], svc[y[i]], perem[y[i]] + [0 for j in range(i)] + [-1 if svc[y[i]] < 0 else 1] + [0 for j in range(len(y) - i - 1)], ocen[i])
+    for i in range(len(yrow)):
+        PrintRow('y', y[i], svc[y[i]], perem[y[i]], ocen[i])
+        
+        if i == row:
+            print(" ← ", end='')
+
 
     for i in range(len(bazis)):
         pr = True
-        k = bazis[i] - 2
-        for j in range(len(y)):
+        k = bazis[i] - bazis[0]
+        for j in range(len(yrow)):
             if k == y[j]:
                 pr = False
 
         if pr:
-            PrintRow('x', bazis[i], svc[k], perem[k] + [0 for j in range(len(y))], ocen[i])
+            PrintRow('x', bazis[i], svc[i], perem[i], ocen[i])
+
+            if i == row:
+                print(" ← ", end='')
 
     PrintFRow(fsv, fcoef)
 
-    print("  -Mф  |   -M     |", end='')
+    print("\n  -Mф  |{: ^10}|".format(str(msv) + "M"), end='')
+    
 
     for coef in mcoef:
         if (coef != 0):
@@ -115,13 +123,35 @@ def PrintTableM(bazis, svc, perem, y, fcoef, fsv, mcoef, ocen):
         else:
             print("{: ^6}|".format(coef), end='')
 
+
+    print()
+    if (col > -1):
+        for i in range(col * 7 + 21):
+            print(" ", end='')
+        print("↑")
     print("\n\n")
 
     return
 
 def PrintTable(bazis, svc, perem):
-    PrintHeader(len(bazis));
+    PrintHeader(len(bazis))
     return
+
+
+def Mcount(mcoef, msvc):
+    mcoef = []
+    for i in range(num + 2):
+        s = 0
+        for j in range(len(y)):
+            s += perem[y[j]][i]
+        mcoef.append(s * -1)
+
+    msvc = 0
+    for i in range(len(y)):
+        mcoef.append(0.0)
+        msvc -= svchlen[y[i]]
+
+    return (mcoef, msvc)
 
 f = open('input.txt')
 k = 0
@@ -183,10 +213,12 @@ for i in range(num):
     if b[i] * a[i][2] < 0:
         y.append(i)
 
+yrow = y.copy()
+
 bazis = [i + 2 for i in range(num)]
 svchlen = [b[i] for i in range(num)]
 perem = [[] for i in range(num)]
-fcoef = [c[0] * -1, c[1] * -1] + [0 for i in range(num + len(y))]
+fcoef = [c[0] * -1, c[1] * -1] + [0.0 for i in range(num + len(y))]
 
 for i in range(num):
     for j in range(num + 2):
@@ -195,41 +227,100 @@ for i in range(num):
         elif j == i + 2:
             perem[i].append(a[i][2]) 
         else:
-            perem[i].append(0)
+            perem[i].append(0.0)
 
 if len(y) == 0:
     PrintTable(bazis, svchlen, perem)
 else:
+
+    for i in range(len(yrow)):
+        perem[y[i]] += [.0 for j in range(i)] + [-1.0 if svchlen[y[i]] < 0 else 1.0] + [.0 for j in range(len(y) - i - 1)]
+
+    for i in range(len(bazis)):
+        pr = True
+        k = bazis[i] - 2
+        for j in range(len(yrow)):
+            if k == y[j]:
+                pr = False
+
+        if pr:
+            perem[k] += [0.0 for j in range(len(y))]
+
+
     mcoef = []
-
-    for i in range(num + 2):
-        s = 0
-        for j in range(len(y)):
-            s += perem[y[j]][i]
-        mcoef.append(s * -1)
-
-    for i in range(len(y)):
-        s = 1
-
-        if (svchlen[y[i]] <= 0):
-            s = -1
-
-        mcoef.append(s * -1.0)
+    msvc = 0
+    (mcoef, msvc) = Mcount(mcoef, msvc)
 
     minM = min(mcoef)
     ind = mcoef.index(minM)
 
     ocen = []
-
+    mo = -1
+    
     for i in range(num):
-        if perem[i][ind] == 0 or perem[i][ind] == 0 * svchlen[i] < 0:
+        if perem[i][ind] == 0 or perem[i][ind] * svchlen[i] < 0 or perem[i][ind] < 0 and svchlen[i] == 0:
             ocen.append([True])
         else:
             ocen.append([False])
             ocen[i].append(svchlen[i] / perem[i][ind])
+            mo = ocen[i][1]
 
+    row = -1
+    for i in range(num):
+        if ocen[i][0] == False and ocen[i][1] < mo:
+            mo = ocen[i][1]
+            row = i
 
-    PrintTableM(bazis, svchlen, perem, y, fcoef, 0, mcoef, ocen)
+    mc = min(mcoef)
+    col = -1
+    if (mc != 0):
+        col = mcoef.index(mc)
 
+    PrintTableM(bazis, svchlen, perem, y, yrow, fcoef, 0, mcoef, msvc, ocen, row, col)
 
-   # while minM != 0:
+    while mc != 0:
+
+        bazis.pop(row)
+        bazis.insert(row, col)
+
+        oldp = []
+        for i in range(len(perem)):
+            oldp.append(perem[i].copy())
+
+        yrow.pop(yrow.index(row))
+
+        for i in range(len(bazis)):
+            for j in range(len(bazis) + len(y)):
+                if (i != row):
+                    perem[i][j] = oldp[i][j] - (oldp[row][j] * oldp[i][col]) / oldp[row][col]
+                else:
+                    perem[i][j] = oldp[i][j] / oldp[row][col]
+
+            (mcoef, msvc) = Mcount(mcoef, msvc)
+
+    minM = min(mcoef)
+    ind = mcoef.index(minM)
+
+    ocen = []
+    mo = -1
+    
+    for i in range(num):
+        if perem[i][ind] == 0 or perem[i][ind] * svchlen[i] < 0 or perem[i][ind] < 0 and svchlen[i] == 0:
+            ocen.append([True])
+        else:
+            ocen.append([False])
+            ocen[i].append(svchlen[i] / perem[i][ind])
+            mo = ocen[i][1]
+
+    row = -1
+    for i in range(num):
+        if ocen[i][0] == False and ocen[i][1] < mo:
+            mo = ocen[i][1]
+            row = i
+
+    mc = min(mcoef)
+    col = -1
+    if (mc != 0):
+        col = mcoef.index(mc)
+
+        PrintTableM(bazis, svchlen, perem, y, yrow, fcoef, 0, mcoef, msvc, ocen, row, col)
